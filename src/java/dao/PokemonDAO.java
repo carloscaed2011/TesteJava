@@ -215,5 +215,80 @@ public class PokemonDAO {
             ConnectionDAO.closeConnection(conn, ps);
         }
     }
+    
+    public ArrayList<Pokemon> procuraType(String type) throws Exception {
+        ArrayList<Pokemon> pks= new ArrayList<>();
+        Pokemon pk =new Pokemon();
+        PreparedStatement ps = null;
+        Connection conn = null;
+        ResultSet rs = null;
+        try {
+            conn = ConnectionDAO.getConnection();
+            String SQL = "SELECT * FROM pokemon INNER JOIN tipo_pokemon on pokemon.num = tipo_pokemon.fk_pokemon_num where tipo_pokemon.tipo = ?;";
+            ps = conn.prepareStatement(SQL);
+            ps.setString(1, type);
+            rs = ps.executeQuery();
+           
+            while (rs.next()) {
+                
+                String SQL2 = "SELECT * FROM tipo_pokemon where fk_pokemon_num=?;";                
+                PreparedStatement ps2 = conn.prepareStatement(SQL2);
+                ps2.setString(1, rs.getString(1));
+                ResultSet rs2 = ps2.executeQuery();
+                ArrayList<String> tps = new ArrayList<>();
+                while (rs2.next()) {                    
+                    tps.add(rs2.getString(2));
+                }                
+                 pk = new Pokemon(rs.getString(1), rs.getString(2),tps, rs.getString(3),rs.getString(4));
+                 pks.add(pk);
+            }
+            
+            return pks;
+
+        } catch (SQLException sqle) {
+            throw new Exception("Erro ao procurar: \n" + sqle);
+        } finally {
+            ConnectionDAO.closeConnection(conn, ps);
+        }
+    }
+    
+    public ArrayList<Pokemon> listaPagina(String pagina, String quantidade) throws Exception {
+        int p = Integer.parseInt(pagina);
+        int qt= Integer.parseInt(quantidade);
+        ArrayList<Pokemon> formatado = new ArrayList<>();
+        PreparedStatement ps = null;
+        java.sql.Connection conn = null;
+        ResultSet rs;
+        ArrayList<Pokemon> pks = new ArrayList<>();
+        try {
+            String SQL = "SELECT * FROM pokemon;";
+            conn = this.conn;
+            ps = conn.prepareStatement(SQL);
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                String SQL2 = "SELECT * FROM tipo_pokemon where fk_pokemon_num=?;";
+                conn = this.conn;
+                PreparedStatement ps2 = conn.prepareStatement(SQL2);
+                ps2.setString(1, rs.getString(1));
+                ResultSet rs2 = ps2.executeQuery();
+                ArrayList<String> tps = new ArrayList<>();
+                while (rs2.next()) {
+                    tps.add(rs2.getString(2));
+                }
+                pks.add(new Pokemon(rs.getString(1), rs.getString(2), tps, rs.getString(3), rs.getString(4)));
+            }
+        } catch (SQLException sqle) {
+            throw new Exception("Erro: \n" + sqle);
+        } finally {
+            ConnectionDAO.closeConnection(conn, ps);
+        }
+        
+        for (int i = (p-1)*qt; i < (qt*p); i++) {
+            System.out.println(i);
+            formatado.add(pks.get(i));            
+        }
+
+        return formatado;
+    }
 
 }

@@ -148,6 +148,46 @@ public class PokemonWS {
         return g.toJson(p);
 
     }
+    
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("pokemonsTipo/{tipo}")
+    public String getJsonTipo(@PathParam("tipo") String tipo) {
+        
+        ArrayList<Pokemon> pokemons = new ArrayList<>();
+        PokemonDAO pkDAO;
+        try {
+            pkDAO = new PokemonDAO();
+            pokemons=pkDAO.procuraType(tipo); //numero a ser passado é uma String formato 000
+        } catch (Exception ex) {
+            Logger.getLogger(PokemonWS.class.getName()).log(Level.SEVERE, null, ex);
+        }     
+        
+        Gson g = new Gson();
+
+        return g.toJson(pokemons);
+
+    }
+    
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("pokemonsPaginaQt/{pagina}/{quantidade}")
+    public String getJsonTipo(@PathParam("pagina") String pagina, @PathParam("quantidade") String quantidade) {
+        
+        ArrayList<Pokemon> pokemons = new ArrayList<>();
+        PokemonDAO pkDAO;
+        try {
+            pkDAO = new PokemonDAO();
+            pokemons=pkDAO.listaPagina(pagina,quantidade); //numero a ser passado é uma String formato 000
+        } catch (Exception ex) {
+            Logger.getLogger(PokemonWS.class.getName()).log(Level.SEVERE, null, ex);
+        }     
+        
+        Gson g = new Gson();
+
+        return g.toJson(pokemons);
+
+    }
 
     /**
      * PUT method for updating or creating an instance of PokemonWS
