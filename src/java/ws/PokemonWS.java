@@ -10,6 +10,8 @@ import dao.PokemonDAO;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.Produces;
@@ -48,7 +50,7 @@ public class PokemonWS {
     public String salvarPokemon(String pokemon) {
 
         try {
-            carrega(); //executar só a primeira vez
+           // carrega(); //executar só a primeira vez
             Gson gson = new Gson();
             Pokemon p = gson.fromJson(pokemon, Pokemon.class);
             //System.out.println(p.getName());
@@ -77,9 +79,9 @@ public class PokemonWS {
     public String getJsonP() {
         //TODO return proper representation object
 
-        ArrayList<Pokemon> pokemons = new ArrayList<>();
+        //ArrayList<Pokemon> pokemons = new ArrayList<>();
 
-        ArrayList<String> tipos = new ArrayList<>();
+        /*ArrayList<String> tipos = new ArrayList<>();
         tipos.add("fogo");
         tipos.add("agua");
         Pokemon p = new Pokemon();
@@ -98,10 +100,20 @@ public class PokemonWS {
         p2.setTipos(tipos);
         p2.setPre_evolution("p");
         p2.setNext_evolution("pMais");
-
+        
         pokemons.add(p);
-        pokemons.add(p2);
-
+        pokemons.add(p2);*/
+        
+        ArrayList<Pokemon> pokemons = new ArrayList<>();
+        PokemonDAO pkDAO;
+        try {
+            pkDAO = new PokemonDAO();
+            pokemons=pkDAO.listaTodos();
+        } catch (Exception ex) {
+            Logger.getLogger(PokemonWS.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        
         Gson g = new Gson();
         return g.toJson(pokemons);
 
@@ -113,7 +125,7 @@ public class PokemonWS {
     public String getJson(@PathParam("numero") String numero) {
         System.out.println(numero);
         //TODO return proper representation object
-        ArrayList<String> tipos = new ArrayList<>();
+        /*ArrayList<String> tipos = new ArrayList<>();
         tipos.add("fogo");
         tipos.add("agua");
         Pokemon p = new Pokemon();
@@ -121,7 +133,16 @@ public class PokemonWS {
         p.setName("pik");
         p.setTipos(tipos);
         p.setPre_evolution("p");
-        p.setNext_evolution("pMais");
+        p.setNext_evolution("pMais");*/        
+        Pokemon p = new Pokemon();
+        PokemonDAO pkDAO;
+        try {
+            pkDAO = new PokemonDAO();
+            p=pkDAO.procuraID(numero); //numero a ser passado é uma String formato 000
+        } catch (Exception ex) {
+            Logger.getLogger(PokemonWS.class.getName()).log(Level.SEVERE, null, ex);
+        }     
+        
         Gson g = new Gson();
 
         return g.toJson(p);
@@ -133,16 +154,42 @@ public class PokemonWS {
      *
      * @param content representation for the resource
      */
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/{numeroPut}")
-    public void putJson(String content) {
+    @PUT   
+    @Produces("application/json")
+    @Consumes("application/json")
+    @Path("pokemonPut/{numeroPut}")    
+    public String putJson(String json,@PathParam("numeroPut") String num) {
+       // System.out.println(num);
+        Gson gson = new Gson();
+        Pokemon p = gson.fromJson(json, Pokemon.class);
+        p.setNum(num);
+        PokemonDAO pokemonDAO;
+        try {
+            pokemonDAO = new PokemonDAO();
+            pokemonDAO.atualizar(p);
+        } catch (Exception ex) {
+            System.out.println(ex);
+            Logger.getLogger(PokemonWS.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        //System.out.println(p.getName());
+        return "ok";
     }
 
-    @DELETE
-    @Path("/{numeroDelete}")
-    public void delete(@PathParam("numero") String numero) {
-        //ejb.remover(Long.valueOf(id));
+    //@DELETE
+    @GET
+    @Path("pokemonDelete/{numeroDelete}")
+    public void delete(@PathParam("numeroDelete") String numero){
+        //System.out.println(numero);
+        PokemonDAO pokemonDAO;
+        try {
+            pokemonDAO = new PokemonDAO();
+            pokemonDAO.excluirID(numero);
+        } catch (Exception ex) {
+            System.out.println(ex);
+            Logger.getLogger(PokemonWS.class.getName()).log(Level.SEVERE, null, ex);
+        }
+                
     }
 
     public void carrega() throws Exception {
@@ -210,13 +257,4 @@ public class PokemonWS {
 
 }
 
-/*public void carrega(){         
-     JSONObject json =new JSONObject(pokemon);  // método para leitura do arquivo json
-        JSONArray todos = json.getJSONArray("pokemon");
-        for (Object titulo : todos) {
-                  JSONObject ob =(JSONObject) titulo;
-                  String n =ob.getString("name");
-                  System.out.println(n+" "+t);
-                  
-              }
-}*/
+
