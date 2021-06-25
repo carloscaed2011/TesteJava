@@ -7,6 +7,8 @@ package ws;
 
 import com.google.gson.Gson;
 import dao.PokemonDAO;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.ArrayList;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
@@ -39,14 +41,14 @@ public class PokemonWS {
      */
     public PokemonWS() {
     }
-    
+
     @POST
     @Produces("application/json")
     @Consumes("application/json")
-    public String salvarPokemon(String pokemon) {       
-        
-        
+    public String salvarPokemon(String pokemon) {
+
         try {
+            carrega(); //executar só a primeira vez
             Gson gson = new Gson();
             Pokemon p = gson.fromJson(pokemon, Pokemon.class);
             //System.out.println(p.getName());
@@ -60,24 +62,23 @@ public class PokemonWS {
 
     /**
      * Retrieves representation of an instance of ws.PokemonWS
+     *
      * @return an instance of java.lang.String
      */
-    
     /*@GET
     @Produces(MediaType.APPLICATION_JSON)
     public String getJson() {
         //TODO return proper representation object
         throw new UnsupportedOperationException();
     }*/
-    
     @GET
-    @Produces(MediaType.APPLICATION_JSON) 
-    @Path("pokemons")    
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("pokemons")
     public String getJsonP() {
         //TODO return proper representation object
-        
+
         ArrayList<Pokemon> pokemons = new ArrayList<>();
-        
+
         ArrayList<String> tipos = new ArrayList<>();
         tipos.add("fogo");
         tipos.add("agua");
@@ -87,7 +88,7 @@ public class PokemonWS {
         p.setTipos(tipos);
         p.setPre_evolution("p");
         p.setNext_evolution("pMais");
-        
+
         ArrayList<String> tipos2 = new ArrayList<>();
         tipos.add("fogo");
         tipos.add("agua");
@@ -97,20 +98,17 @@ public class PokemonWS {
         p2.setTipos(tipos);
         p2.setPre_evolution("p");
         p2.setNext_evolution("pMais");
-        
+
         pokemons.add(p);
         pokemons.add(p2);
-        
+
         Gson g = new Gson();
         return g.toJson(pokemons);
-            
-        
-        
-        
+
     }
-    
+
     @GET
-    @Produces(MediaType.APPLICATION_JSON) 
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("pokemon/{numero}")
     public String getJson(@PathParam("numero") String numero) {
         System.out.println(numero);
@@ -124,13 +122,15 @@ public class PokemonWS {
         p.setTipos(tipos);
         p.setPre_evolution("p");
         p.setNext_evolution("pMais");
-        Gson g =new Gson();
-        return g.toJson(p);        
-        
+        Gson g = new Gson();
+
+        return g.toJson(p);
+
     }
 
     /**
      * PUT method for updating or creating an instance of PokemonWS
+     *
      * @param content representation for the resource
      */
     @PUT
@@ -138,16 +138,79 @@ public class PokemonWS {
     @Path("/{numeroPut}")
     public void putJson(String content) {
     }
-    
+
     @DELETE
     @Path("/{numeroDelete}")
-     public void delete(@PathParam("numero") String numero) {
+    public void delete(@PathParam("numero") String numero) {
         //ejb.remover(Long.valueOf(id));
     }
-     
+
+    public void carrega() throws Exception {
+        PokemonDAO pokemonDAO = new PokemonDAO();
+        Pokemon pokemon = new Pokemon();
+        String jsonString = "";
+        try {
+            String caminhoDoArquivo = "C:/Users/CARLOS/Documents/NetBeansProjects/TesteWS/pokedex.json";
+            FileReader reader = new FileReader(caminhoDoArquivo);
+            BufferedReader br = new BufferedReader(reader);
+            String temp;
+            while ((temp = br.readLine()) != null) {
+                jsonString = jsonString + temp;
+                //System.out.println(temp);
+            }
+            JSONObject json = new JSONObject(jsonString);
+            //System.out.println(json);
+            JSONArray array = json.getJSONArray("pokemon");
+
+            for (Object o1 : array) {
+                JSONObject j1 = (JSONObject) o1;
+                pokemon.setNum(j1.getString("num"));
+                pokemon.setName(j1.getString("name"));
+                ArrayList<String> typs = new ArrayList<>();
+                for (Object o2 : j1.getJSONArray("type")) {
+                    //System.out.println("tipo: " + o2);
+                    typs.add("" + o2);
+                }
+                pokemon.setTipos(typs);
+                try {
+                    String aux = "";
+                    for (Object o3 : j1.getJSONArray("prev_evolution")) {
+                        JSONObject j3 = (JSONObject) o3;
+                        //System.out.println("prev: " + j3.getString("name"));
+                        aux = aux + j3.getString("name") + " ";
+                    }
+                    pokemon.setPre_evolution(aux);
+                } catch (Exception e) {
+                    pokemon.setPre_evolution("");
+                    //System.out.println("não existe prev!");
+                }
+
+                try {
+                    String aux = "";
+                    for (Object o4 : j1.getJSONArray("next_evolution")) {
+                        JSONObject j4 = (JSONObject) o4;
+                        //System.out.println("next: " + j4.getString("name"));
+                        aux = aux + j4.getString("name") + " ";
+                    }
+                    pokemon.setNext_evolution(aux);
+                } catch (Exception e) {
+                    pokemon.setNext_evolution("");
+                    //System.out.println("não existe next!");
+                }
+
+                pokemonDAO.salvar(pokemon);
+
+            }
+
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
+    }
+
 }
 
- /*public void carrega(){         
+/*public void carrega(){         
      JSONObject json =new JSONObject(pokemon);  // método para leitura do arquivo json
         JSONArray todos = json.getJSONArray("pokemon");
         for (Object titulo : todos) {
